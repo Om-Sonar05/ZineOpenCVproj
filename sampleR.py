@@ -13,7 +13,6 @@ def detect_color(frame, contour):
     mean_color = cv2.mean(frame, mask=mask)
     return mean_color[:3]
 
-
 def main():
     cap = cv2.VideoCapture(0)
 
@@ -39,9 +38,21 @@ def main():
                     if sides == 3:
                         shape = "Triangle"
                     elif sides == 4:
-                        shape = "Rectangle" if area > 500 else "Square"
+                        # Check for squares and rectangles based on aspect ratio
+                        _, _, w, h = cv2.boundingRect(contour)
+                        aspect_ratio = float(w) / h
+
+                        if 0.95 <= aspect_ratio <= 1.05:
+                            shape = "Square"
+                        else:
+                            shape = "Rectangle"
                     elif sides > 4:
-                        shape = "Circle"
+                        # Detect circles using the minimum enclosing circle
+                        (_, _), radius = cv2.minEnclosingCircle(contour)
+                        if radius > 10:  # Adjust this threshold based on your requirements
+                            shape = "Circle"
+                        else:
+                            shape = "Unknown"
                     else:
                         shape = "Unknown"
 
@@ -49,7 +60,8 @@ def main():
 
                     if size > 0.00:
                         cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
-                        cv2.putText(frame, f"{shape}, Color: {color}, Size: {size}", (int(contour.ravel()[0]), int(contour.ravel()[1])), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                        x, y, _, _ = cv2.boundingRect(contour)
+                        cv2.putText(frame, f"{shape}, Color: {color}, Size: {size}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
         cv2.imshow("Object Detection", frame)
 
