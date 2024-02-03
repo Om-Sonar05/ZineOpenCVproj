@@ -48,7 +48,7 @@ def detect_objects(frame):
     contours, _ = cv2.findContours(combined_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
-        if cv2.contourArea(contour) > 1000:
+        if cv2.contourArea(contour) > 700:
             x, y, w, h = cv2.boundingRect(contour)
             roi = frame[y:y+h, x:x+w]
 
@@ -59,7 +59,8 @@ def detect_objects(frame):
             shape, size = get_shape_and_size(contour)
             cv2.putText(frame, f"Shape: {shape}, Size: {size:.2f}", (x, y + h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
-            cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
+            # Draw bounding box
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
 def get_shape_and_size(contour):
     epsilon = 0.04 * cv2.arcLength(contour, True)
@@ -67,19 +68,15 @@ def get_shape_and_size(contour):
 
     num_sides = len(approx)
 
-    if num_sides == 3:
-        shape = "Triangle"
-    elif num_sides == 4:
-        # Check for square or rectangle
+    if num_sides == 4:
         aspect_ratio = float(cv2.boundingRect(approx)[2]) / cv2.boundingRect(approx)[3]
         shape = "Square" if 0.9 <= aspect_ratio <= 1.1 else "Rectangle"
     else:
-        # Check for circle
         area = cv2.contourArea(contour)
         perimeter = cv2.arcLength(contour, True)
         circularity = (4 * np.pi * area) / (perimeter ** 2)
 
-        if circularity > 0.7:  # Adjust the circularity threshold as needed
+        if circularity > 0.7:
             shape = "Circle"
         else:
             shape = "Unknown"
